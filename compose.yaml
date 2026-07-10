@@ -1,0 +1,60 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: clinic_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mysqladmin ping -h localhost -u root -p$${MYSQL_ROOT_PASSWORD}"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  mongodb:
+    image: mongo:8
+    container_name: clinic_mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_DATABASE}
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./docker/mongodb/init.js:/docker-entrypoint-initdb.d/init.js:ro
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mongosh",
+          "--quiet",
+          "--username",
+          "root",
+          "--password",
+          "mongo_password",
+          "--authenticationDatabase",
+          "admin",
+          "--eval",
+          "db.adminCommand('ping').ok"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  mysql_data:
+  mongodb_data:
